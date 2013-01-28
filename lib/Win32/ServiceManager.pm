@@ -69,4 +69,49 @@ sub create_service {
    capture(qw(sc description), $name, $description) if $description;
 }
 
+sub start_service {
+   my ($self, $name, $options) = @_;
+
+   die 'name is required!' unless $name;
+   $options ||= {};
+
+   my $sc = $self->use_sc_default;
+   $sc = $options->{use_sc} if exists $options->{use_sc};
+
+   capture( ($sc ? 'sc' : 'net' ), 'start', $name )
+}
+
+sub stop_service {
+   my ($self, $name, $options) = @_;
+
+   die 'name is required!' unless $name;
+   $options ||= {};
+
+   my $sc = $self->use_sc_default;
+   $sc = $options->{use_sc} if exists $options->{use_sc};
+
+   capture( ($sc ? 'sc' : 'net' ), 'stop', $name )
+}
+
+sub delete_service {
+   my ($self, $name) = @_;
+
+   die 'name is required!' unless $name;
+
+   capture( qw(sc delete), $name )
+}
+
+sub restart_service {
+   my ($self, $name, $options) = @_;
+
+   die 'name is required!' unless $name;
+   $options ||= {};
+
+   my $sc = $self->use_sc_default;
+   $sc = $options->{use_sc} if exists $options->{use_sc};
+
+   $self->stop_service($name, { use_sc => 0 });
+   $self->start_service($name, { use_sc => $sc });
+}
+
 1;
