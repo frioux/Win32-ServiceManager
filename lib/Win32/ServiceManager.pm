@@ -23,6 +23,34 @@ has nssm_path => (
    default => sub { 'nssm.exe' },
 );
 
+sub _nssm_install {
+   $_[0]->nssm_path, 'install', $_[1], $_[2], ($_[3] ? $_[3] : ())
+}
+
+sub _sc_install {
+   qw(sc create), $_[1], qq(binpath= "$_[2]") . ($_[3] ?  " $_[3]" : ''),
+}
+
+sub _sc_configure {
+   qw(sc config), $_[1], qq(DisplayName= "$_[2]"),
+   qq(type= own start= auto) . $_[0]->_depends($_[3])
+}
+
+sub _depends {
+   my ($self, $depends) = @_;
+
+   return '' unless $depends;
+
+   my $d = $depends;
+   $d = join '\\', @$depends if ref $depends;
+
+   return qq( depend= "$d");
+}
+
+sub _sc_failure { qw(sc failure), $_[1], 'reset= 60', 'actions= restart/60000' }
+
+sub _sc_description { qw(sc description), $_[1], $_[2] }
+
 sub create_service {
    my ($self, %args) = @_;
 
@@ -50,23 +78,14 @@ sub create_service {
    my $description = $args{description};
 
    if ($nssm) {
-      capture($self->nssm_path, 'install', $name, $command,
-         ($args ? $args : ())
-      )
+      capture($self->_nssm_install($name, $command, $args))
    } else {
-      capture(
-         qw(sc create), $name,
-         qq(binpath= "$command") . ($args ?  " $args" : ''),
-      )
+      capture($self->_sc_install($name, $command, $args))
    }
 
-   capture(
-      qw(sc config), $name, qq(DisplayName= "$display"),
-      qq(type= own start= auto) . ($depends ? qq( depend= "$depends") : '')
-   );
-
-   capture(qw(sc failure), $name, 'reset= 60', 'actions= restart/60000');
-   capture(qw(sc description), $name, $description) if $description;
+   capture($self->_sc_configure($name, $display, $depends));
+   capture($self->_sc_failure($name));
+   capture($self->_sc_description($name, $description)) if $description;
 }
 
 sub start_service {
@@ -315,3 +334,10 @@ example we have a subclass that looks something like the following:
 
 The above makes it very easy for use to start, stop, add, and remove catalyst
 services.
+
+=head1 CAVEAT LECTOR
+
+I have used this at work and am confident in it, but it has only been used on
+Windows Server 2008.  The tests can do no better than ensure the generated
+strings are as expected, instead of ensuring that a service was correctly
+created or started or whatever.
