@@ -341,3 +341,8 @@ I have used this at work and am confident in it, but it has only been used on
 Windows Server 2008.  The tests can do no better than ensure the generated
 strings are as expected, instead of ensuring that a service was correctly
 created or started or whatever.
+
+Additionally, in my own work when I get an error from C<sc> I just report it
+and move forward.  Because of this I have done very little to make exceptions
+useful.  I am open to making them objects but again, I do not need that myself,
+so B<Patches Welcome!>
