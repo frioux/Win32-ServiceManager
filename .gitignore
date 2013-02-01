@@ -1,0 +1,5 @@
+*.swp
+Makefile
+*.gz
+.build
+Win32-ServiceManager-*
