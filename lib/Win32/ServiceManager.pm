@@ -1,5 +1,7 @@
 package Win32::ServiceManager;
 
+# ABSTRACT: Manage Windows Services
+
 use Moo;
 use IPC::System::Simple 'capture';
 
