@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+       - Allow easy specification of 32 or 64 bit nssm
 
 0.001000  2013-01-31 21:40:06 CST6CDT
        - Initial Release

@@ -20,10 +20,18 @@ has use_sc_default => (
    default => sub { 1 },
 );
 
+has nssm_bits => (
+   is => 'ro',
+   default => sub { 64 },
+);
+
 has nssm_path => (
    is => 'ro',
-   default => sub { 'nssm.exe' },
+   lazy => 1,
+   builder => '_build_nssm_path',
 );
+
+sub _build_nssm_path { 'nssm_' . $_[0]->nssm_bits . q(.exe) }
 
 sub _nssm_install {
    $_[0]->nssm_path, 'install', $_[1], $_[2], ($_[3] ? $_[3] : ())
@@ -295,7 +303,13 @@ for restarts, for example.
 
 =head2 nssm_path
 
-Set this to the path to nssm (default is just 'nssm.exe').
+Set this to the path to nssm (default is just C<nssm_64.exe>, or C<nssm_32.exe>
+if you set L</nssm_bits> to 32).
+
+=head2 nssm_bits
+
+L</nssm> comes in both 32 and 64 bit flavors.  This specifies when of the
+bundled C<nssm> binaries to use.  (default is 64)
 
 =head1 nssm
 

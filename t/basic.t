@@ -11,7 +11,7 @@ ok(my $sm = Win32::ServiceManager->new, 'instantiate');
 
 cmp_deeply(
    [$sm->_nssm_install(qw(foo bar baz))],
-   [qw(nssm.exe install foo bar baz)],
+   [qw(nssm_64.exe install foo bar baz)],
    'nssm install seems to work',
 );
 
