@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+       - fix deps (Test::Deep)
        - Bundle nssm binaries (version 2.16)
        - Allow easy specification of 32 or 64 bit nssm
 
