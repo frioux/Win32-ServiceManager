@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.001001  2013-03-12 17:44:51 CST6CDT
        - fix deps (Test::Deep)
        - Bundle nssm binaries (version 2.16)
        - Allow easy specification of 32 or 64 bit nssm
