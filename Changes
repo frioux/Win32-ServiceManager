@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - add get_status method
 
 0.001001  2013-03-12 17:44:51 CST6CDT
  - fix deps (Test::Deep)

@@ -4,6 +4,7 @@ package Win32::ServiceManager;
 
 use Moo;
 use IPC::System::Simple 'capture';
+use Win32::Service 'GetStatus';
 
 has use_nssm_default => (
     is => 'ro',
@@ -141,6 +142,30 @@ sub restart_service {
 
    $self->stop_service($name, { use_sc => 0 });
    $self->start_service($name, { use_sc => $sc });
+}
+
+my @statuses = (
+   undef, # starts at 1
+   'stopped',
+   'start pending',
+   'stop pending',
+   'running',
+   'continue pending',
+   'pause pending',
+   'paused',
+);
+
+sub get_status {
+   my ($self, $name, $options) = @_;
+
+   my %ret;
+   GetStatus('', $name, \%ret);
+
+   # more statuses will be added when I (or others) need them
+   # http://msdn.microsoft.com/en-us/library/windows/desktop/ms685996%28v=vs.85%29.aspx
+   return {
+      current_state => $statuses[$ret{CurrentState}],
+   }
 }
 
 1;
@@ -284,6 +309,45 @@ block until the service starts.  (Note that the blocking until the service has
 stopped is required.)
 
 =back
+
+=head2 get_status
+
+ $sc->start_service('GRWeb1')
+    unless $sc->get_status('GRWeb1')->{current_state} eq 'running';
+
+Returns the status info about the specified service.  The status info is a hash
+containing the following keys:
+
+=over 2
+
+=item * C<current_state>
+
+Can be any of the following
+
+=over 2
+
+=item * C<stopped>
+
+=item * C<start pending>
+
+=item * C<stop pending>
+
+=item * C<running>
+
+=item * C<continue pending>
+
+=item * C<pause pending>
+
+=item * C<paused>
+
+=back
+
+=back
+
+Note that there is much more information that could be included in
+C<get_status>, but I've only needed the C<current_state> so far.  If you need
+something else I will gladly add more information to the returned hash, or
+better yet, send a patch.
 
 =head1 ATTRIBUTES
 
