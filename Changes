@@ -1,6 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - refactor start and stop_service methods to use Win32::Service instead of
+   shelling out to sc or net.  Because of this the use_sc option has been
+   renamed to non_blocking
  - add get_status method
 
 0.001001  2013-03-12 17:44:51 CST6CDT

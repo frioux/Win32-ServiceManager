@@ -4,7 +4,8 @@ package Win32::ServiceManager;
 
 use Moo;
 use IPC::System::Simple 'capture';
-use Win32::Service 'GetStatus';
+use Win32::Service qw(StartService StopService GetStatus);
+use Time::HiRes 'sleep';
 
 has use_nssm_default => (
     is => 'ro',
@@ -16,7 +17,7 @@ has use_perl_default => (
     default => sub { 1 },
 );
 
-has use_sc_default => (
+has non_blocking_default => (
    is => 'ro',
    default => sub { 1 },
 );
@@ -105,10 +106,17 @@ sub start_service {
    die 'name is required!' unless $name;
    $options ||= {};
 
-   my $sc = $self->use_sc_default;
-   $sc = $options->{use_sc} if exists $options->{use_sc};
+   my $non_blocking = $self->non_blocking_default;
+   $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
-   capture( ($sc ? 'sc' : 'net' ), 'start', $name )
+   StartService('', $name) or die "failed to start service <$name>";
+   return if $non_blocking;
+
+   my $starting = $self->get_status($name)->{current_state} eq 'start pending';
+   while ($starting) {
+      sleep 0.05;
+      $starting = $self->get_status($name)->{current_state} eq 'start pending';
+   }
 }
 
 sub stop_service {
@@ -117,10 +125,17 @@ sub stop_service {
    die 'name is required!' unless $name;
    $options ||= {};
 
-   my $sc = $self->use_sc_default;
-   $sc = $options->{use_sc} if exists $options->{use_sc};
+   my $non_blocking = $self->non_blocking_default;
+   $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
-   capture( ($sc ? 'sc' : 'net' ), 'stop', $name )
+   StopService('', $name) or die "failed to stop service <$name>";
+   return if $non_blocking;
+
+   my $stopping = $self->get_status($name)->{current_state} eq 'stop pending';
+   while ($stopping) {
+      sleep 0.05;
+      $stopping = $self->get_status($name)->{current_state} eq 'stop pending';
+   }
 }
 
 sub delete_service {
@@ -137,11 +152,11 @@ sub restart_service {
    die 'name is required!' unless $name;
    $options ||= {};
 
-   my $sc = $self->use_sc_default;
-   $sc = $options->{use_sc} if exists $options->{use_sc};
+   my $non_blocking = $self->non_blocking_default;
+   $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
-   $self->stop_service($name, { use_sc => 0 });
-   $self->start_service($name, { use_sc => $sc });
+   $self->stop_service($name, { non_blocking => 0 });
+   $self->start_service($name, { non_blocking => $non_blocking });
 }
 
 my @statuses = (
@@ -192,7 +207,7 @@ __END__
        $dir->file(qw( App script server.pl ))->stringify .
           ' -p 3001',
  );
- $sc->start_service('LynxWebServer01', { use_sc => 0 });
+ $sc->start_service('LynxWebServer01', { non_blocking => 0 });
  $sc->stop_service('LynxWebServer01');
  $sc->delete_service('LynxWebServer01');
 
@@ -262,32 +277,32 @@ above.  B<Patches Welcome!>
 
 =head2 start_service
 
- $sc->start_service('GRWeb1', { use_sc => 1 });
+ $sc->start_service('GRWeb1', { non_blocking => 1 });
 
 Starts a service with the passed name.  The second argument is an optional
 hashref with the following options:
 
 =over 2
 
-=item * C<usc_sc>
+=item * C<non_blocking>
 
-(defaults to the value of L</use_sc_default>)  Set this to false if you want to
+(defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service starts.
 
 =back
 
 =head2 stop_service
 
- $sc->stop_service('GRWeb1', { use_sc => 1 });
+ $sc->stop_service('GRWeb1', { non_blocking => 1 });
 
 Stops a service with the passed name.  The second argument is an optional
 hashref with the following options:
 
 =over 2
 
-=item * C<usc_sc>
+=item * C<non_blocking>
 
-(defaults to the value of L</use_sc_default>)  Set this to false if you want to
+(defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service stops.
 
 =back
@@ -295,16 +310,16 @@ block until the service stops.
 
 =head2 restart_service
 
- $sc->restart_service('GRWeb1', { use_sc => 1 });
+ $sc->restart_service('GRWeb1', { non_blocking => 1 });
 
 Stops and starts a service with the passed name.  The second argument is an optional
 hashref with the following options:
 
 =over 2
 
-=item * C<usc_sc>
+=item * C<non_blocking>
 
-(defaults to the value of L</use_sc_default>)  Set this to false if you want to
+(defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service starts.  (Note that the blocking until the service has
 stopped is required.)
 
@@ -359,11 +374,15 @@ The default value of C<use_nssm> for the L</create_service> method.
 
 The default value of C<use_perl> for the L</create_service> method.
 
-=head2 use_sc_default
+=head2 idempotent_default
 
-Set this to true (default) to use C<sc> to start or stop services.  C<sc> is
-faster, but asyncronous.  Sometimes using ye olde C<net> is better as it allows
-for restarts, for example.
+Set this to true (default) to idempotently start, stop, delete, and create
+services.
+
+=head2 non_blocking_default
+
+Set this to true (default) to asyncronously to start or stop services.
+Sometimes blocking is better as it allows for restarts, for example.
 
 =head2 nssm_path
 
