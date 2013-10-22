@@ -4,6 +4,10 @@ use strict;
 use warnings;
 
 use Test::More;
+BEGIN {
+   plan skip_all => 'This module is Win32 only' unless
+      $^O eq 'MSWin32' || $^O eq 'cygwin'
+};
 use Test::Deep;
 use Win32::ServiceManager;
 
