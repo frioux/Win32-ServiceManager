@@ -379,6 +379,12 @@ better yet, send a patch.
 Returns a hashref of services.  Keys are the display name, values are the real
 name.
 
+=head2 delete_service
+
+ $sc->delete_service('GRWeb1');
+
+Deletes a service
+
 =head1 ATTRIBUTES
 
 =head2 use_nssm_default
