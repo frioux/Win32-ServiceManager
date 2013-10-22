@@ -222,7 +222,7 @@ sub get_status {
    my $x;
    for (1..1_000) {
       GetStatus('', $name, \%ret) and last;
-      $x = $_;
+      $x = $_ + 1;
       sleep 0.05;
    }
 
