@@ -6,6 +6,8 @@ use Moo;
 use IPC::System::Simple 'capture';
 use Win32::Service qw(StartService StopService GetStatus GetServices);
 use Time::HiRes 'sleep';
+use Syntax::Keyword::Junction 'any';
+use List::Util 'first';
 
 has use_nssm_default => (
     is => 'ro',
@@ -18,6 +20,11 @@ has use_perl_default => (
 );
 
 has non_blocking_default => (
+   is => 'ro',
+   default => sub { 1 },
+);
+
+has idempotent_default => (
    is => 'ro',
    default => sub { 1 },
 );
@@ -72,16 +79,8 @@ sub create_service {
    my $use_perl = $self->use_perl_default;
    $use_perl = $args{use_perl} if exists $args{use_perl};
 
-   my ($command, $args);
-
-   if ($use_perl) {
-      $command = $^X;
-      die 'command is required!' unless $args{command};
-      $args = $args{command} . ($args{args} ? " $args{args}" : '')
-   } else {
-      $command = $args{command} or die 'command is required!';
-      $args = $args{args};
-   }
+   my $idempotent = $self->idempotent_default;
+   $idempotent = $args{idempotent} if exists $args{idempotent};
 
    my $name    = $args{name}    or die 'name is required!';
    my $display = $args{display} or die 'display is required!';
@@ -89,10 +88,24 @@ sub create_service {
    my $depends = $args{depends};
    my $description = $args{description};
 
-   if ($nssm) {
-      capture($self->_nssm_install($name, $command, $args))
-   } else {
-      capture($self->_sc_install($name, $command, $args))
+   # we don't totally check for idempotence here...
+   if (!$idempotent || $idempotent && !$self->_is_service_created($name)) {
+      my ($command, $args);
+
+      if ($use_perl) {
+         $command = $^X;
+         die 'command is required!' unless $args{command};
+         $args = $args{command} . ($args{args} ? " $args{args}" : '')
+      } else {
+         $command = $args{command} or die 'command is required!';
+         $args = $args{args};
+      }
+
+      if ($nssm) {
+         capture($self->_nssm_install($name, $command, $args))
+      } else {
+         capture($self->_sc_install($name, $command, $args))
+      }
    }
 
    capture($self->_sc_configure($name, $display, $depends));
@@ -106,8 +119,15 @@ sub start_service {
    die 'name is required!' unless $name;
    $options ||= {};
 
+   my $idempotent = $self->idempotent_default;
+   $idempotent = $options->{idempotent} if exists $options->{idempotent};
+
    my $non_blocking = $self->non_blocking_default;
    $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
+
+   return if $idempotent &&
+      $self->get_status($name)->{current_state} eq
+         any('running', 'start pending');
 
    StartService('', $name) or die "failed to start service <$name>";
    return if $non_blocking;
@@ -125,8 +145,15 @@ sub stop_service {
    die 'name is required!' unless $name;
    $options ||= {};
 
+   my $idempotent = $self->idempotent_default;
+   $idempotent = $options->{idempotent} if exists $options->{idempotent};
+
    my $non_blocking = $self->non_blocking_default;
    $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
+
+   return if $idempotent &&
+      $self->get_status($name)->{current_state} eq
+         any('stopped', 'stop pending');
 
    StopService('', $name) or die "failed to stop service <$name>";
    return if $non_blocking;
@@ -139,7 +166,12 @@ sub stop_service {
 }
 
 sub delete_service {
-   my ($self, $name) = @_;
+   my ($self, $name, $options) = @_;
+
+   my $idempotent = $self->idempotent_default;
+   $idempotent = $options->{idempotent} if exists $options->{idempotent};
+
+   return if $idempotent && !$self->_is_service_created($name);
 
    die 'name is required!' unless $name;
 
@@ -155,8 +187,14 @@ sub restart_service {
    my $non_blocking = $self->non_blocking_default;
    $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
-   $self->stop_service($name, { non_blocking => 0 });
-   $self->start_service($name, { non_blocking => $non_blocking });
+   $self->stop_service($name, {
+      exists $options->{idempotent} ? (idempotent => $options->{idempotent}) : (),
+      non_blocking => 0,
+   });
+   $self->start_service($name, {
+      exists $options->{idempotent} ? (idempotent => $options->{idempotent}) : (),
+      exists $options->{non_blocking} ? (non_blocking => $options->{non_blocking}) : (),
+   });
 }
 
 my @statuses = (
@@ -188,6 +226,12 @@ sub get_services {
    GetServices('', \%ret);
 
    \%ret
+}
+
+sub _is_service_created {
+   my ($self, $name) = @_;
+
+   !!first { $_ eq $name } values %{$self->get_services};
 }
 
 1;
@@ -273,6 +317,14 @@ XXX: do these even make sense?
 function.  You may either pass a string or an array ref.  A string gets passed
 on directly, the array reference gets properly joined together.
 
+=item * C<idempotent>
+
+(defaults to the value of L<idempotent_default>)  Set this to get errors if the
+service already exists.  Note that unlike the other methods this one is not %100
+idempotent.  If a service has the exact same name but a different command it
+this will mask that problem.  I am willing to resolve this if you have patches
+on how to read this information (preferably without diving into the registry.)
+
 =back
 
 Note: there are many options that C<sc> can use to create and modify services.
@@ -296,6 +348,11 @@ hashref with the following options:
 (defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service starts.
 
+=item * C<idempotent>
+
+(defaults to the value of L</idempotent_default>)  Set this to false if you want
+errors when the service is already started or starting.
+
 =back
 
 =head2 stop_service
@@ -311,6 +368,11 @@ hashref with the following options:
 
 (defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service stops.
+
+=item * C<idempotent>
+
+(defaults to the value of L</idempotent_default>)  Set this to false if you want
+errors when the service is already stopped or stopping
 
 =back
 
@@ -329,6 +391,11 @@ hashref with the following options:
 (defaults to the value of L</non_blocking_default>)  Set this to false if you want to
 block until the service starts.  (Note that the blocking until the service has
 stopped is required.)
+
+=item * C<idempotent>
+
+(defaults to the value of L</idempotent_default>)  Set this to false if you want
+errors when the service is already stopped or stopping
 
 =back
 
@@ -381,9 +448,18 @@ name.
 
 =head2 delete_service
 
- $sc->delete_service('GRWeb1');
+ $sc->delete_service('GRWeb1', { idempotent => 0 });
 
 Deletes a service
+
+=over 2
+
+=item * C<idempotent>
+
+(defaults to the value of L</idempotent_default>)  Set this to false if you want
+errors when the service doesn't exist
+
+=back
 
 =head1 ATTRIBUTES
 

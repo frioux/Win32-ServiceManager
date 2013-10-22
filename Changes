@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - add (default on) idempotent option
  - refactor start and stop_service methods to use Win32::Service instead of
    shelling out to sc or net.  Because of this the use_sc option has been
    renamed to non_blocking
