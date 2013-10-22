@@ -40,6 +40,8 @@ has nssm_path => (
    builder => '_build_nssm_path',
 );
 
+has warnings => ( is => 'ro' );
+
 sub _build_nssm_path { 'nssm_' . $_[0]->nssm_bits . q(.exe) }
 
 sub _nssm_install {
@@ -217,7 +219,15 @@ sub get_status {
    my ($self, $name, $options) = @_;
 
    my %ret;
-   GetStatus('', $name, \%ret);
+   my $x;
+   for (1..1_000) {
+      GetStatus('', $name, \%ret) and last;
+      $x = $_;
+      sleep 0.05;
+   }
+
+   warn "Got status of $name in $x tries\n" if defined $x && $self->warnings;
+   die "couldn't get status from $name" unless %ret;
 
    # more statuses will be added when I (or others) need them
    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms685996%28v=vs.85%29.aspx
@@ -412,6 +422,11 @@ errors when the service is already stopped or stopping
 Returns the status info about the specified service.  The status info is a hash
 containing the following keys:
 
+Note that for reasons unknown to me the underlying win32 C<GetStatus> call fails
+when restarting services, so I added a retry counter.  If you are interested in
+finding out when and how seriously your services fail the count, turn on
+L</warnings>.
+
 =over 2
 
 =item * C<current_state>
@@ -505,6 +520,11 @@ if you set L</nssm_bits> to 32).
 
 L</nssm> comes in both 32 and 64 bit flavors.  This specifies when of the
 bundled C<nssm> binaries to use.  (default is 64)
+
+=head2 warnings
+
+Set this to true to get warnings for non-serious failures.  Currently the
+only such warning is in L</get_status>.
 
 =head1 nssm
 

@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - workaround get_status failing sometimes
 
 0.002000  2013-10-22 11:57:47 America/Chicago
  - add (default on) idempotent option
