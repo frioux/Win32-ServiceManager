@@ -171,9 +171,14 @@ sub delete_service {
    my $idempotent = $self->idempotent_default;
    $idempotent = $options->{idempotent} if exists $options->{idempotent};
 
+   my $auto = $options->{autostop};
+   $auto = {} if $auto && !ref $auto;
+
    return if $idempotent && !$self->_is_service_created($name);
 
    die 'name is required!' unless $name;
+
+   $self->stop_service($name, $auto) if $auto;
 
    capture( qw(sc delete), $name )
 }
@@ -453,6 +458,16 @@ name.
 Deletes a service
 
 =over 2
+
+=item * C<autostop>
+
+(defaults to false)  Set this to true if you want the service to be stopped in
+addition to being deleted.  If you set it to a hash reference the options will
+be passed along to L</stop_service>.  For example a sensible thing to do is:
+
+ $sc->delete_service(GRWeb1 => { autostop => { non_blocking => 0 } });
+
+as that should ensure that the service is truly gone after the code runs.
 
 =item * C<idempotent>
 

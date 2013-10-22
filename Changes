@@ -7,6 +7,7 @@ Revision history for {{$dist->name}}
    renamed to non_blocking
  - add get_status method
  - add get_services method
+ - add autostop option to delete_service
  - document delete_service method
 
 0.001001  2013-03-12 17:44:51 CST6CDT
