@@ -5,6 +5,7 @@ Revision history for {{$dist->name}}
    shelling out to sc or net.  Because of this the use_sc option has been
    renamed to non_blocking
  - add get_status method
+ - add get_services method
 
 0.001001  2013-03-12 17:44:51 CST6CDT
  - fix deps (Test::Deep)

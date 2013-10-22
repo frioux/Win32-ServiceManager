@@ -4,7 +4,7 @@ package Win32::ServiceManager;
 
 use Moo;
 use IPC::System::Simple 'capture';
-use Win32::Service qw(StartService StopService GetStatus);
+use Win32::Service qw(StartService StopService GetStatus GetServices);
 use Time::HiRes 'sleep';
 
 has use_nssm_default => (
@@ -181,6 +181,13 @@ sub get_status {
    return {
       current_state => $statuses[$ret{CurrentState}],
    }
+}
+
+sub get_services {
+   my %ret;
+   GetServices('', \%ret);
+
+   \%ret
 }
 
 1;
@@ -363,6 +370,14 @@ Note that there is much more information that could be included in
 C<get_status>, but I've only needed the C<current_state> so far.  If you need
 something else I will gladly add more information to the returned hash, or
 better yet, send a patch.
+
+=head2 get_services
+
+ my $services = $sc->get_services;
+ say "$_ is installed!" for keys %$services;
+
+Returns a hashref of services.  Keys are the display name, values are the real
+name.
 
 =head1 ATTRIBUTES
 
