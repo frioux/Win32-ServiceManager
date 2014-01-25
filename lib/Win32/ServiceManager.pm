@@ -70,7 +70,7 @@ sub _depends {
 
 sub _sc_failure { qw(sc failure), $_[1], 'reset= 60', 'actions= restart/60000' }
 
-sub _sc_description { qw(sc description), $_[1], $_[2] }
+sub _sc_description { qw(sc description), $_[1], qq("$_[2]") }
 
 sub create_service {
    my ($self, %args) = @_;
