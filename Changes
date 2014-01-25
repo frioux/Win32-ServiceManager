@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - upgrade nssm to 2.21.1
  - fix description not accepting strings with spaces (thanks wes!)
  - fix off-by-one error in get_status call counting (thanks wes!)
 
