@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - fix description not accepting strings with spaces (thanks wes!)
  - fix off-by-one error in get_status call counting (thanks wes!)
 
 0.002001  2013-10-22 16:48:29 America/Chicago
