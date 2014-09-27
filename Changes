@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.002003  2014-09-26 23:26:33-05:00 America/Chicago
  - upgrade nssm to 2.24
  - add `check_command` and related `check_command_default` attr for
    `create_services`
