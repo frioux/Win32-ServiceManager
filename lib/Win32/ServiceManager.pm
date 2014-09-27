@@ -29,6 +29,11 @@ has idempotent_default => (
    default => sub { 1 },
 );
 
+has check_command_default => (
+   is => 'ro',
+   default => sub { 1 },
+);
+
 has nssm_bits => (
    is => 'ro',
    default => sub { 64 },
@@ -93,7 +98,15 @@ sub create_service {
    # we don't totally check for idempotence here...
    if (!$idempotent || $idempotent && !$self->_is_service_created($name)) {
       my ($command, $args);
-
+      if (exists $args{check_command}) {
+         if ($args{check_command}) {
+            die "cannot find command: $args{command}"
+               unless $self->_exists($args{command})
+         }
+      } elsif ($self->check_command_default) {
+         die "cannot find command: $args{command}"
+            unless $self->_exists($args{command})
+      }
       if ($use_perl) {
          $command = $^X;
          die 'command is required!' unless $args{command};
@@ -249,6 +262,8 @@ sub _is_service_created {
    !!first { $_ eq $name } values %{$self->get_services};
 }
 
+sub _exists { -e $_[1] }
+
 1;
 
 __END__
@@ -316,6 +331,12 @@ will have to set C<use_perl> to false.
 =item * C<description>
 
 (optional) The description to give the service.
+
+=item * C<check_command>
+
+(defaults to the value of L<check_command_default>) This will check that the
+command you passed exists on the filesystem and if it does not exists it will
+die
 
 =item * C<command>
 
@@ -492,6 +513,11 @@ errors when the service doesn't exist
 =back
 
 =head1 ATTRIBUTES
+
+=head2 check_command_default
+
+The default value of C<check_command> for the L</create_service> method.
+Default is true.
 
 =head2 use_nssm_default
 
