@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.002004  2018-02-13 16:25:46-06:00 America/Chicago
  - add optional user and password configs
 
 0.002003  2014-09-26 23:26:33-05:00 America/Chicago
