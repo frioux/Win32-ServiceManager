@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+ - add optional user and password configs
 
 0.002003  2014-09-26 23:26:33-05:00 America/Chicago
  - upgrade nssm to 2.24
