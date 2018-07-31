@@ -8,6 +8,7 @@ use Win32::Service qw(StartService StopService GetStatus GetServices);
 use Time::HiRes 'sleep';
 use Syntax::Keyword::Junction 'any';
 use List::Util 'first';
+use Carp 'croak';
 
 has use_nssm_default => (
     is => 'ro',
@@ -60,9 +61,20 @@ sub _sc_install {
 sub _sc_configure {
    my ($self, $name, $c) = @_;
    qw(sc config), $name, qq(DisplayName= "$c->{display}"),
-   qq(type= own start= auto)
+   qq(type= own)
+   . $self->_start($c->{start})
    . $self->_depends($c->{depends})
    . $self->_auth($c->{user}, $c->{password})
+}
+
+sub _start {
+   my ($self, $start) = @_;
+   $start //= 'auto';
+
+   my %types = map { $_ => 1 } qw{boot system auto demand disabled delayed-auto};
+   croak 'Unknown start type' unless $types{$start};
+
+   return qq( start= $start);
 }
 
 sub _depends {
@@ -109,6 +121,7 @@ sub create_service {
    my $config = {
       display => $display,
       depends => $args{depends},
+      start => $args{start},
       user => $args{user},
       password => $args{password},
    };
@@ -322,6 +335,7 @@ __END__
     use_nssm    => 1,
     command     => 'C:\code\GR\script\server.pl -p 3001',
     depends     => [qw(MSSQL Apache2.4)],
+    start       => 'delayed-auto',
     user        => 'DOMAIN\username',
     password    => 'hunter2',
  );
@@ -373,6 +387,15 @@ XXX: do these even make sense?
 function.  You may either pass a string or an array ref.  A string gets passed
 on directly, the array reference gets properly joined together.
 
+=item * C<start>
+
+(optional) The start type for the service.  If left blank, the default value is
+B<auto>.  Available start types are C<boot> C<system> C<auto> C<demand>
+C<disabled> C<delayed-auto>.
+
+Note: The default value when using C<sc> is C<demand>. The default value in
+this package is C<auto> to maintain compatibility with previous versions.
+
 =item * C<user>
 
 (optional) The user account under which to run the service. If left blank, the
@@ -396,9 +419,9 @@ on how to read this information (preferably without diving into the registry.)
 Note: there are many options that C<sc> can use to create and modify services.
 I have taken the few that we use in my project and forced the rest upon you,
 gentle user.  For example, whether you like it or not these services will
-restart on failure and start automatically on boot.  I am completely willing to
-add more options, but in 4 distinct projects we have never needed more than the
-above.  B<Patches Welcome!>
+restart on failure.  I am completely willing to add more options, but in 4
+distinct projects we have never needed more than the above.  B<Patches
+Welcome!>
 
 =head2 start_service
 
