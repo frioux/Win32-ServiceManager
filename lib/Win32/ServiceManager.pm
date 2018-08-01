@@ -350,11 +350,11 @@ Takes a hash of the following arguments:
 
 =item * C<use_nssm>
 
-(defaults to the value of L<use_nssm_default>)  Set this to start your service with L</nssm>
+(defaults to the value of L</use_nssm_default>)  Set this to start your service with L</nssm>
 
 =item * C<use_perl>
 
-(defaults to the value of L<use_perl_default>)  Set this to create perl
+(defaults to the value of L</use_perl_default>)  Set this to create perl
 services.  Uses C<$^X>.  If for some reason you want to use a different perl you
 will have to set C<use_perl> to false.
 
@@ -368,7 +368,7 @@ will have to set C<use_perl> to false.
 
 =item * C<check_command>
 
-(defaults to the value of L<check_command_default>) This will check that the
+(defaults to the value of L</check_command_default>) This will check that the
 command you passed exists on the filesystem and if it does not exists it will
 die
 
@@ -403,12 +403,12 @@ default value is B<LocalSystem>.
 
 =item * C<password>
 
-(optional) The password credential for L<user>. Required for any other user
+(optional) The password credential for C<user>. Required for any other user
 than LocalSystem. If a blank password is desired, use an empty string.
 
 =item * C<idempotent>
 
-(defaults to the value of L<idempotent_default>)  Set this to get errors if the
+(defaults to the value of L</idempotent_default>)  Set this to get errors if the
 service already exists.  Note that unlike the other methods this one is not %100
 idempotent.  If a service has the exact same name but a different command it
 this will mask that problem.  I am willing to resolve this if you have patches
