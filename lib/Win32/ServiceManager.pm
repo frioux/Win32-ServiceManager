@@ -142,10 +142,9 @@ sub create_service {
       if ($use_perl) {
          $command = $^X;
          die 'command is required!' unless $args{command};
-         $args = $args{command} . ($args{args} ? " $args{args}" : '')
+         $args = $args{command}
       } else {
          $command = $args{command} or die 'command is required!';
-         $args = $args{args};
       }
 
       if ($nssm) {
