@@ -55,7 +55,7 @@ sub _nssm_install {
 }
 
 sub _sc_install {
-   qw(sc create), $_[1], qq(binpath= "$_[2]") . ($_[3] ?  " $_[3]" : ''),
+   qw(sc create), $_[1], qq(binpath= "$_[2]"),
 }
 
 sub _sc_configure {
@@ -115,6 +115,7 @@ sub create_service {
 
    my $name    = $args{name}    or die 'name is required!';
    my $display = $args{display} or die 'display is required!';
+   die "'args' argument not available" if $args{args};
    die "can't provide a password without a 'user'" if $args{password} && !$args{user};
 
    my $description = $args{description};
