@@ -312,16 +312,16 @@ __END__
  );
 
  $sc->create_service(
-    name => 'LynxWebServer01',
-    display => 'Lynx Web Server 1',
+    name => 'GRWebServer01',
+    display => 'Giant Robot Web Server 1',
     description => 'Handles Web Requests on port 3001',
     command =>
        $dir->file(qw( App script server.pl ))->stringify .
           ' -p 3001',
  );
- $sc->start_service('LynxWebServer01', { non_blocking => 0 });
- $sc->stop_service('LynxWebServer01');
- $sc->delete_service('LynxWebServer01');
+ $sc->start_service('GRWebServer01', { non_blocking => 0 });
+ $sc->stop_service('GRWebServer01');
+ $sc->delete_service('GRWebServer01');
 
 =head1 METHODS
 
@@ -618,7 +618,7 @@ RAM.  The code is at C<git://git.nssm.cc/nssm/nssm.git>.
 The best way to use this module is to subclass it for your software.  So for
 example we have a subclass that looks something like the following:
 
- package Lynx::ServiceManager
+ package GiantRobot::ServiceManager;
 
  use Moo;
  extends 'Win32::ServiceManager';
@@ -628,8 +628,8 @@ example we have a subclass that looks something like the following:
     my ($self, $i) = @_;
 
     $self->create_service(
-       name => "LynxWebServer$i",
-       display => "Lynx Web Server $i",
+       name => "GRWebServer$i",
+       display => "GRWeb Server $i",
        description => 'Handles Web Requests on port 3001',
        command =>
           $dir->file(qw( App script server.pl ))->stringify .
@@ -638,7 +638,7 @@ example we have a subclass that looks something like the following:
 
  }
 
- sub start_catalyst_service { $_[0]->start_service("LynxWebServer$_[1]", $_[2]) }
+ sub start_catalyst_service { $_[0]->start_service("GRWebServer$_[1]", $_[2]) }
 
  ...
 
