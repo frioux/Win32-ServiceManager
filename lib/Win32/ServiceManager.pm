@@ -318,6 +318,7 @@ __END__
     command =>
        $dir->file(qw( App script server.pl ))->stringify .
           ' -p 3001',
+    check_command => 0,
  );
  $sc->start_service('LynxWebServer01', { non_blocking => 0 });
  $sc->stop_service('LynxWebServer01');
@@ -334,6 +335,7 @@ __END__
     use_perl    => 1,
     use_nssm    => 1,
     command     => 'C:\code\GR\script\server.pl -p 3001',
+    check_command => 0,
     depends     => [qw(MSSQL Apache2.4)],
     start       => 'delayed-auto',
     user        => 'DOMAIN\username',
@@ -370,16 +372,11 @@ will have to set C<use_perl> to false.
 
 (defaults to the value of L<check_command_default>) This will check that the
 command you passed exists on the filesystem and if it does not exists it will
-die
+die. Please note that if you want to pass some parameter to your command, then you need to set check_command => 0
 
 =item * C<command>
 
 (required) The command that is effectively your service
-
-=item * C<args>
-
-(optional) Arguments that get passed to the command above.
-XXX: do these even make sense?
 
 =item * C<depends>
 
@@ -634,6 +631,7 @@ example we have a subclass that looks something like the following:
        command =>
           $dir->file(qw( App script server.pl ))->stringify .
              " -p 300$i",
+        check_command => 0,
     );
 
  }
