@@ -6,7 +6,6 @@ use Moo;
 use IPC::System::Simple 'capture';
 use Win32::Service qw(StartService StopService GetStatus GetServices);
 use Time::HiRes 'sleep';
-use Syntax::Keyword::Junction 'any';
 use List::Util 'first';
 use Carp 'croak';
 
@@ -171,9 +170,9 @@ sub start_service {
    my $non_blocking = $self->non_blocking_default;
    $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
+   my $state = $self->get_status($name)->{current_state};
    return if $idempotent &&
-      $self->get_status($name)->{current_state} eq
-         any('running', 'start pending');
+      ($state eq 'running' || $state eq 'start pending');
 
    StartService('', $name) or die "failed to start service <$name>";
    return if $non_blocking;
@@ -197,9 +196,9 @@ sub stop_service {
    my $non_blocking = $self->non_blocking_default;
    $non_blocking = $options->{non_blocking} if exists $options->{non_blocking};
 
+   my $state = $self->get_status($name)->{current_state};
    return if $idempotent &&
-      $self->get_status($name)->{current_state} eq
-         any('stopped', 'stop pending');
+      ($state eq 'stopped' || $state eq 'stop pending');
 
    StopService('', $name) or die "failed to stop service <$name>";
    return if $non_blocking;
@@ -464,7 +463,6 @@ block until the service stops.
 errors when the service is already stopped or stopping
 
 =back
-
 
 =head2 restart_service
 
