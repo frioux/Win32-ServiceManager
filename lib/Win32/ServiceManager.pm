@@ -3,7 +3,7 @@ package Win32::ServiceManager;
 # ABSTRACT: Manage Windows Services
 
 use Moo;
-use IPC::System::Simple 'capture';
+use IPC::System::Simple 1.28 'capturex';
 use Win32::Service qw(StartService StopService GetStatus GetServices);
 use Time::HiRes 'sleep';
 use List::Util 'first';
@@ -54,16 +54,16 @@ sub _nssm_install {
 }
 
 sub _sc_install {
-   qw(sc create), $_[1], qq(binpath= "$_[2]") . ($_[3] ?  " $_[3]" : ''),
+   qw(sc create), $_[1], 'binpath=', $_[2], ($_[3] ? $_[3] : ()),
 }
 
 sub _sc_configure {
    my ($self, $name, $c) = @_;
-   qw(sc config), $name, qq(DisplayName= "$c->{display}"),
-   qq(type= own)
-   . $self->_start($c->{start})
-   . $self->_depends($c->{depends})
-   . $self->_auth($c->{user}, $c->{password})
+   qw(sc config), $name, qq(DisplayName=), $c->{display},
+   qw(type= own),
+   $self->_start($c->{start}),
+   $self->_depends($c->{depends}),
+   $self->_auth($c->{user}, $c->{password}),
 }
 
 sub _start {
@@ -73,32 +73,33 @@ sub _start {
    my %types = map { $_ => 1 } qw{boot system auto demand disabled delayed-auto};
    croak 'Unknown start type' unless $types{$start};
 
-   return qq( start= $start);
+   return 'start=', $start;
 }
 
 sub _depends {
    my ($self, $depends) = @_;
 
-   return '' unless $depends;
+   return () unless $depends;
 
    my $d = $depends;
    $d = join '\\', @$depends if ref $depends;
 
-   return qq( depend= "$d");
+   return 'depend=', $d;
 }
 
 sub _auth {
    my ($self, $user, $pass) = @_;
-   return '' unless $user;
+   return () unless $user;
 
-   join ' ', '', grep defined $_,
-      $user ? qq(obj= "$user") : undef,
-      $pass ? qq(password= "$pass") : undef,
+   return (
+      $user ? ('obj=', $user) : (),
+      $pass ? ('password=', $pass) : (),
+   )
 }
 
-sub _sc_failure { qw(sc failure), $_[1], 'reset= 60', 'actions= restart/60000' }
+sub _sc_failure { qw(sc failure), $_[1], 'reset=', 60, 'actions=', 'restart/60000' }
 
-sub _sc_description { qw(sc description), $_[1], qq("$_[2]") }
+sub _sc_description { qw(sc description), $_[1], $_[2] }
 
 sub create_service {
    my ($self, %args) = @_;
@@ -147,15 +148,15 @@ sub create_service {
       }
 
       if ($nssm) {
-         capture($self->_nssm_install($name, $command, $args))
+         capturex($self->_nssm_install($name, $command, $args))
       } else {
-         capture($self->_sc_install($name, $command, $args))
+         capturex($self->_sc_install($name, $command, $args))
       }
    }
 
-   capture($self->_sc_configure($name, $config));
-   capture($self->_sc_failure($name));
-   capture($self->_sc_description($name, $description)) if $description;
+   capturex($self->_sc_configure($name, $config));
+   capturex($self->_sc_failure($name));
+   capturex($self->_sc_description($name, $description)) if $description;
 }
 
 sub start_service {
@@ -225,7 +226,7 @@ sub delete_service {
 
    $self->stop_service($name, $auto) if $auto;
 
-   capture( qw(sc delete), $name )
+   capturex( qw(sc delete), $name )
 }
 
 sub restart_service {
