@@ -304,20 +304,16 @@ __END__
 =head1 SYNOPSIS
 
  use Win32::ServiceManager;
- use Path::Class 'file';
 
- my $dir = file(__FILE__)->parent->absolute;
  my $sc = Win32::ServiceManager->new(
-    nssm_path => $dir->file(qw( cgi exe nssm.exe ))->stringify,
+    nssm_path => $your_nssm_path,
  );
 
  $sc->create_service(
     name => 'GRWebServer01',
     display => 'Giant Robot Web Server 1',
     description => 'Handles Web Requests on port 3001',
-    command =>
-       $dir->file(qw( App script server.pl ))->stringify .
-          ' -p 3001',
+    command => 'your_script.pl --port 3001',
  );
  $sc->start_service('GRWebServer01', { non_blocking => 0 });
  $sc->stop_service('GRWebServer01');
@@ -646,10 +642,11 @@ services.
 
 =head1 CAVEAT LECTOR
 
-I have used this at work and am confident in it, but it has only been used on
-Windows Server 2008.  The tests can do no better than ensure the generated
-strings are as expected, instead of ensuring that a service was correctly
-created or started or whatever.
+This module has been used in production from Windows Server 2008 - 2022. It
+should also work fine on desktop versions of Windows as long as the C<sc>
+interface stays the same. The included tests can do no better than ensure the
+generated strings are as expected, instead of ensuring that a service was
+correctly created or started or whatever.
 
 Additionally, in my own work when I get an error from C<sc> I just report it
 and move forward.  Because of this I have done very little to make exceptions
