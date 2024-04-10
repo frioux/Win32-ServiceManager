@@ -82,7 +82,7 @@ sub _depends {
    return () unless $depends;
 
    my $d = $depends;
-   $d = join '\\', @$depends if ref $depends;
+   $d = join '/', @$depends if ref $depends;
 
    return 'depend=', $d;
 }

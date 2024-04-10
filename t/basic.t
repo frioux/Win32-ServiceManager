@@ -33,7 +33,7 @@ cmp_deeply(
 
 cmp_deeply(
    [$sm->_sc_configure('foo', {display => 'Foo', depends => [qw(MSSQL Apache2.2)]})],
-   [qw(sc config foo DisplayName= Foo type= own start= auto depend= MSSQL\Apache2.2 )],
+   [qw(sc config foo DisplayName= Foo type= own start= auto depend= MSSQL/Apache2.2 )],
    'sc configure with arrayref deps seems to work',
 );
 
