@@ -113,9 +113,9 @@ sub create_service {
    my $idempotent = $self->idempotent_default;
    $idempotent = $args{idempotent} if exists $args{idempotent};
 
-   my $name    = $args{name}    or die 'name is required!';
-   my $display = $args{display} or die 'display is required!';
-   die "can't provide a password without a 'user'" if $args{password} && !$args{user};
+   my $name    = $args{name}    or croak 'name is required!';
+   my $display = $args{display} or croak 'display is required!';
+   croak "can't provide a password without a 'user'" if $args{password} && !$args{user};
 
    my $description = $args{description};
    my $config = {
@@ -131,19 +131,19 @@ sub create_service {
       my ($command, $args);
       if (exists $args{check_command}) {
          if ($args{check_command}) {
-            die "cannot find command: $args{command}"
+            croak "cannot find command: $args{command}"
                unless $self->_exists($args{command})
          }
       } elsif ($self->check_command_default) {
-         die "cannot find command: $args{command}"
+         croak "cannot find command: $args{command}"
             unless $self->_exists($args{command})
       }
       if ($use_perl) {
          $command = $^X;
-         die 'command is required!' unless $args{command};
+         croak 'command is required!' unless $args{command};
          $args = $args{command} . ($args{args} ? " $args{args}" : '')
       } else {
-         $command = $args{command} or die 'command is required!';
+         $command = $args{command} or croak 'command is required!';
          $args = $args{args};
       }
 
@@ -162,7 +162,7 @@ sub create_service {
 sub start_service {
    my ($self, $name, $options) = @_;
 
-   die 'name is required!' unless $name;
+   croak 'name is required!' unless $name;
    $options ||= {};
 
    my $idempotent = $self->idempotent_default;
@@ -175,7 +175,7 @@ sub start_service {
    return if $idempotent &&
       ($state eq 'running' || $state eq 'start pending');
 
-   StartService('', $name) or die "failed to start service <$name>";
+   StartService('', $name) or croak "failed to start service <$name>";
    return if $non_blocking;
 
    my $starting = $self->get_status($name)->{current_state} eq 'start pending';
@@ -188,7 +188,7 @@ sub start_service {
 sub stop_service {
    my ($self, $name, $options) = @_;
 
-   die 'name is required!' unless $name;
+   croak 'name is required!' unless $name;
    $options ||= {};
 
    my $idempotent = $self->idempotent_default;
@@ -201,7 +201,7 @@ sub stop_service {
    return if $idempotent &&
       ($state eq 'stopped' || $state eq 'stop pending');
 
-   StopService('', $name) or die "failed to stop service <$name>";
+   StopService('', $name) or croak "failed to stop service <$name>";
    return if $non_blocking;
 
    my $stopping = $self->get_status($name)->{current_state} eq 'stop pending';
@@ -222,7 +222,7 @@ sub delete_service {
 
    return if $idempotent && !$self->_is_service_created($name);
 
-   die 'name is required!' unless $name;
+   croak 'name is required!' unless $name;
 
    $self->stop_service($name, $auto) if $auto;
 
@@ -232,7 +232,7 @@ sub delete_service {
 sub restart_service {
    my ($self, $name, $options) = @_;
 
-   die 'name is required!' unless $name;
+   croak 'name is required!' unless $name;
    $options ||= {};
 
    my $non_blocking = $self->non_blocking_default;
@@ -271,7 +271,7 @@ sub get_status {
    }
 
    warn "Got status of $name in $x tries\n" if defined $x && $self->warnings;
-   die "couldn't get status from $name" unless %ret;
+   croak "couldn't get status from $name" unless %ret;
 
    # more statuses will be added when I (or others) need them
    # http://msdn.microsoft.com/en-us/library/windows/desktop/ms685996%28v=vs.85%29.aspx
